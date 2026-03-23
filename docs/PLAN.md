@@ -75,14 +75,13 @@ mados-updater/
 ```
 mados-updates/
 ├── releases/
-│   ├── mados-1.0.0.tar.gz        # Full system image
-│   ├── mados-1.0.1.tar.gz        # Incremental update
-│   └── ...
+│   └── stable/
+│       ├── releases.json      # Release metadata
+│       └── mados-1.0.0.tar.gz  # Full system image
 ├── packages/                      # Pacman packages (optional)
 │   ├── mados-core-1.0.0-1-x86_64.pkg.tar.zst
 │   └── ...
-└── metadata/
-    └── releases.json             # Release metadata
+└── README.md
 ```
 
 ## Update Flow
