@@ -1,0 +1,18 @@
+pkgbase = mados-updater
+	pkgdesc = OTA update system for madOS with Btrfs snapshots and automatic rollback
+	pkgver = 1.0.0
+	pkgrel = 1
+	url = https://github.com/madkoding/mados-updater
+	arch = x86_64
+	license = MIT
+	depends = python
+	depends = btrfs-progs
+	depends = snapper
+	depends = pacman-contrib
+	depends = curl
+	optdepends = zenity: for graphical dialogs
+	backup = etc/mados-updater.conf
+	source = git+https://github.com/madkoding/mados-updater.git#tag=v1.0.0
+	sha256sums = SKIP
+
+	pkgname = mados-updater

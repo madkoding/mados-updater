@@ -1,0 +1,37 @@
+pkgname=mados-updater
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="OTA update system for madOS with Btrfs snapshots and automatic rollback"
+arch=("x86_64")
+url="https://github.com/madkoding/mados-updater"
+license=("MIT")
+depends=("python" "btrfs-progs" "snapper" "pacman-contrib" "curl")
+optdepends=("zenity: for graphical dialogs")
+makedepends=("git")
+backup=("etc/mados-updater.conf")
+source=("git+https://github.com/madkoding/mados-updater.git#tag=v${pkgver}")
+sha256sums=("SKIP")
+
+build() {
+    cd "${pkgname}"
+}
+
+package() {
+    cd "${pkgname}"
+
+    install -Dm755 client/mados-updater "${pkgdir}/usr/local/bin/mados-updater"
+
+    install -Dm644 client/lib/*.py "${pkgdir}/usr/local/lib/mados-updater/"
+
+    install -Dm644 client/systemd/mados-updater.service "${pkgdir}/etc/systemd/system/mados-updater.service"
+    install -Dm644 client/systemd/mados-updater.timer "${pkgdir}/etc/systemd/system/mados-updater.timer"
+
+    install -Dm644 client/hooks/pre-update.hook "${pkgdir}/usr/share/libalpm/hooks/pre-update.hook"
+    install -Dm755 client/hooks/snapper-pre-update "${pkgdir}/usr/local/bin/snapper-pre-update"
+
+    install -Dm644 client/mados-updater.conf "${pkgdir}/etc/mados-updater.conf"
+    install -Dm644 client/mados-version "${pkgdir}/etc/mados-version"
+
+    mkdir -p "${pkgdir}/usr/share/doc/${pkgname}"
+    install -Dm644 docs/PLAN.md "${pkgdir}/usr/share/doc/${pkgname}/PLAN.md"
+}
