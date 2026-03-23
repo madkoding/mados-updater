@@ -34,6 +34,9 @@ class SnapperClient:
         except subprocess.CalledProcessError as e:
             print(f"Error creating snapshot: {e.stderr}")
             return None
+        except subprocess.CalledProcessError as e:
+            print(f"Error creating snapshot: {e.stderr}")
+            return None
 
     def list_snapshots(self) -> List[dict]:
         try:
@@ -44,17 +47,18 @@ class SnapperClient:
                 check=True,
             )
             snapshots = []
-            lines = result.stdout.strip().split("\n")[1:]
-            for line in lines:
-                parts = re.split(r"\s+", line.strip())
-                if len(parts) >= 7:
+            lines = result.stdout.strip().split("\n")
+            for line in lines[2:]:
+                parts = [p.strip() for p in line.split("|")]
+                if len(parts) >= 6:
                     snapshots.append(
                         {
                             "number": parts[0],
                             "type": parts[1],
-                            "date": parts[2],
-                            "time": parts[3],
-                            "description": " ".join(parts[4:]),
+                            "pre_num": parts[2],
+                            "date": parts[3],
+                            "time": parts[4],
+                            "description": parts[5] if len(parts) > 5 else "",
                         }
                     )
             return snapshots

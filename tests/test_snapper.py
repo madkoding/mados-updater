@@ -27,7 +27,9 @@ class TestSnapperClient(unittest.TestCase):
 
     @patch("subprocess.run")
     def test_create_snapshot_failure(self, mock_run):
-        mock_run.side_effect = Exception("Command failed")
+        from subprocess import CalledProcessError
+
+        mock_run.side_effect = CalledProcessError(1, "snapper", stderr="Command failed")
         result = self.snapper.create_snapshot()
         self.assertIsNone(result)
 
@@ -35,25 +37,28 @@ class TestSnapperClient(unittest.TestCase):
     def test_list_snapshots(self, mock_run):
         mock_run.return_value = MagicMock(
             returncode=0,
-            stdout="""# | Type   | Pre # | Date                            | Description
---+--------+-------+----------------------------------+-----------------
-0  | single |       |                                 | timeline
-1  | pre    |       | Sun 22 Mar 2026 10:00:00 UTC    | pre-update-42
-2  | post   |     1 | Sun 22 Mar 2026 10:01:00 UTC    | post-update-42""",
+            stdout="""# | Type   | Pre # | Date   | Hour | Description
+---+--------+-------+-------+------+-----------------
+0  | single |       | 03-22 | 10:00 | timeline
+1  | pre    |       | 03-22 | 10:00 | pre-update-42
+2  | post   |     1 | 03-22 | 10:01 | post-update-42""",
             stderr="",
         )
         snapshots = self.snapper.list_snapshots()
-        self.assertEqual(len(snapshots), 2)
-        self.assertEqual(snapshots[0]["number"], "1")
-        self.assertIn("pre-update", snapshots[0]["description"])
+        self.assertEqual(len(snapshots), 3)
+        self.assertEqual(snapshots[1]["number"], "1")
+        self.assertEqual(snapshots[1]["type"], "pre")
+        self.assertIn("pre-update", snapshots[1]["description"])
 
     @patch("subprocess.run")
     def test_get_latest_pre_snapshot(self, mock_run):
         mock_run.return_value = MagicMock(
             returncode=0,
-            stdout="""# | Type   | Pre # | Date                            | Description
---+--------+-------+----------------------------------+-----------------
-1  | pre    |       | Sun 22 Mar 2026 10:00:00 UTC    | pre-update-42""",
+            stdout="""# | Type   | Pre # | Date   | Hour | Description
+---+--------+-------+-------+------+-----------------
+0  | single |       | 03-22 | 10:00 | timeline
+1  | pre    |       | 03-22 | 10:00 | pre-update-42
+2  | post   |     1 | 03-22 | 10:01 | post-update-42""",
             stderr="",
         )
         result = self.snapper.get_latest_pre_snapshot()
