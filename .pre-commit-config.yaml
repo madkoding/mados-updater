@@ -1,0 +1,23 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: ruff check client/ tests/
+        language: system
+        pass_files: false
+        always_run: true
+
+      - id: mypy-check
+        name: mypy type check
+        entry: mypy client/ --ignore-missing-imports
+        language: system
+        pass_files: false
+        always_run: true
+
+      - id: pytest
+        name: pytest tests
+        entry: python3 -m pytest tests/ -q --tb=short
+        language: system
+        pass_files: false
+        always_run: true

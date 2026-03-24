@@ -1,15 +1,13 @@
 """GitHub API integration for mados-updater."""
 
+import hashlib
 import json
 import os
-import subprocess
+import shutil
 import tempfile
-import hashlib
-from dataclasses import dataclass
-from typing import Optional, List
-import urllib.request
 import urllib.error
-
+import urllib.request
+from dataclasses import dataclass
 
 RELEASES_JSON_URL = "releases.json"
 
@@ -18,7 +16,7 @@ RELEASES_JSON_URL = "releases.json"
 class ReleaseInfo:
     version: str
     release_date: str
-    packages: List[dict]
+    packages: list[dict]
     checksum: str
     changelog: str
     min_supported_version: str
@@ -42,7 +40,7 @@ class GitHubClient:
     def _get_release_url(self) -> str:
         return f"{self.repo_url}/releases/download/{self.channel}/{RELEASES_JSON_URL}"
 
-    def fetch_releases_json(self) -> Optional[ReleaseInfo]:
+    def fetch_releases_json(self) -> ReleaseInfo | None:
         url = self._get_release_url()
         try:
             with urllib.request.urlopen(url, timeout=30) as resp:
@@ -92,8 +90,8 @@ class GitHubClient:
         actual = sha256_hash.hexdigest()
         return actual == expected_checksum
 
-    def get_latest_release(self) -> Optional[ReleaseInfo]:
-        api_url = self._get_api_url(f"releases/latest")
+    def get_latest_release(self) -> ReleaseInfo | None:
+        api_url = self._get_api_url("releases/latest")
         try:
             with urllib.request.urlopen(api_url, timeout=30) as resp:
                 data = json.loads(resp.read().decode())
@@ -110,8 +108,6 @@ class GitHubClient:
                 if self.download_file(RELEASES_JSON_URL, releases_json_path):
                     with open(releases_json_path) as f:
                         data = json.load(f)
-                    import shutil
-
                     shutil.rmtree(temp_dir)
                     return ReleaseInfo(
                         version=data.get("version", ""),

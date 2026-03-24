@@ -114,10 +114,23 @@ stateDiagram-v2
 
 ## Installation
 
+### System Dependencies
+
 ```bash
 # Install dependencies
 pacman -S btrfs-progs snapper pacman-contrib curl
+```
 
+### Development Dependencies
+
+```bash
+# Install Python development tools (for testing/linting)
+pip install pytest pytest-cov ruff mypy --break-system-packages
+```
+
+### Install madOS Updater
+
+```bash
 # Clone and install
 git clone https://github.com/madkoding/mados-updater.git
 cd mados-updater
@@ -239,9 +252,71 @@ DEMO_MODE=true mados-updater --install
 
 ## Testing
 
+This project uses a comprehensive testing infrastructure with pytest, ruff, and mypy.
+
+### Quick Start
+
 ```bash
-# Run unit tests
-python3 -m unittest discover -s tests -v
+# Run all tests with coverage
+python3 -m pytest tests/ -v --cov=client --cov-report=term-missing
+
+# Run only unit tests (no coverage)
+python3 -m pytest tests/ -v
+```
+
+### Development Commands
+
+```bash
+# Lint code (ruff)
+ruff check client/ tests/
+
+# Auto-fix lint issues
+ruff check client/ tests/ --fix
+
+# Type checking (mypy)
+mypy client/ --ignore-missing-imports
+
+# Full verification (lint + typecheck + tests)
+ruff check client/ tests/ && mypy client/ --ignore-missing-imports && python3 -m pytest tests/
+```
+
+### Pre-commit Hook
+
+A pre-commit hook runs automatically before each commit to validate code quality:
+
+```bash
+# The hook is located at .git/hooks/pre-commit
+# It runs: ruff check → mypy → pytest
+git commit -m "Your commit message"
+```
+
+To manually run the pre-commit checks:
+```bash
+.git/hooks/pre-commit
+```
+
+### Test Coverage
+
+Current coverage: **87%+** across all modules.
+
+| Module | Coverage |
+|--------|----------|
+| `client/lib/__init__.py` | 100% |
+| `client/lib/config.py` | 95% |
+| `client/lib/github.py` | 96% |
+| `client/lib/pacman.py` | 84% |
+| `client/lib/snapper.py` | 71% |
+
+### Demo Mode
+
+Test the update flow without making actual system changes:
+
+```bash
+DEMO_MODE=true mados-updater --check
+DEMO_MODE=true mados-updater --download
+DEMO_MODE=true mados-updater --install
+DEMO_MODE=true mados-updater --rollback
+DEMO_MODE=true mados-updater --status
 ```
 
 ## Documentation

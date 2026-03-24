@@ -1,8 +1,7 @@
 """Snapper integration for mados-updater."""
 
-import subprocess
 import re
-from typing import Optional, List
+import subprocess
 
 
 class SnapperClient:
@@ -10,8 +9,8 @@ class SnapperClient:
     CONFIG = "root"
 
     def create_snapshot(
-        self, description: str = None, snapshot_type: str = "single"
-    ) -> Optional[int]:
+        self, description: str | None = None, snapshot_type: str = "single"
+    ) -> int | None:
         cmd = [
             "snapper",
             "create",
@@ -34,11 +33,8 @@ class SnapperClient:
         except subprocess.CalledProcessError as e:
             print(f"Error creating snapshot: {e.stderr}")
             return None
-        except subprocess.CalledProcessError as e:
-            print(f"Error creating snapshot: {e.stderr}")
-            return None
 
-    def list_snapshots(self) -> List[dict]:
+    def list_snapshots(self) -> list[dict]:
         try:
             result = subprocess.run(
                 ["snapper", "list", "-c", self.CONFIG],
@@ -62,11 +58,11 @@ class SnapperClient:
                         }
                     )
             return snapshots
-        except subprocess.CalledProcessError as e:
-            print(f"Error listing snapshots: {e.stderr}")
+        except (subprocess.CalledProcessError, FileNotFoundError) as e:
+            print(f"Error listing snapshots: {e}")
             return []
 
-    def get_latest_pre_snapshot(self) -> Optional[int]:
+    def get_latest_pre_snapshot(self) -> int | None:
         snapshots = self.list_snapshots()
         for snap in reversed(snapshots):
             if self.SNAPSHOT_PREFIX in snap.get("description", "").lower():

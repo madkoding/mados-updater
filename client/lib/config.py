@@ -2,7 +2,6 @@
 
 import os
 from configparser import ConfigParser
-from typing import Optional
 
 DEFAULT_CONFIG = """[updater]
 repo_url = https://github.com/madkoding/mados-updates
@@ -21,7 +20,7 @@ STATE_PATH = "/var/lib/mados-updater/state.conf"
 
 
 class UpdaterConfig:
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self, config_path: str | None = None):
         self.config_path = config_path or CONFIG_PATH
         self.config = ConfigParser()
         self._load()
@@ -38,8 +37,8 @@ class UpdaterConfig:
         with open(self.config_path, "w") as f:
             self.config.write(f)
 
-    def get(self, section: str, key: str, fallback: str = None) -> str:
-        return self.config.get(section, key, fallback=fallback)
+    def get(self, section: str, key: str, fallback: str | None = None) -> str:
+        return self.config.get(section, key, fallback=fallback)  # type: ignore[arg-type]
 
     def get_bool(self, section: str, key: str, fallback: bool = False) -> bool:
         return self.config.getboolean(section, key, fallback=fallback)
@@ -58,7 +57,7 @@ class UpdaterConfig:
 
 
 class UpdaterState:
-    def __init__(self, state_path: Optional[str] = None):
+    def __init__(self, state_path: str | None = None):
         self.state_path = state_path or STATE_PATH
         self.config = ConfigParser()
         self._load()

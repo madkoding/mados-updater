@@ -1,16 +1,14 @@
 """Pacman integration for mados-updater."""
 
-import subprocess
 import os
-import shutil
-from typing import List, Optional
+import subprocess
 
 
 class PacmanClient:
-    def __init__(self, db_path: Optional[str] = None):
+    def __init__(self, db_path: str | None = None):
         self.db_path = db_path or "/var/lib/pacman"
 
-    def install_packages(self, package_paths: List[str]) -> bool:
+    def install_packages(self, package_paths: list[str]) -> bool:
         if not package_paths:
             return True
 
@@ -27,7 +25,7 @@ class PacmanClient:
             print(f"Error installing packages: {e}")
             return False
 
-    def get_installed_version(self, package_name: str) -> Optional[str]:
+    def get_installed_version(self, package_name: str) -> str | None:
         try:
             result = subprocess.run(
                 ["pacman", "-Q", package_name],
@@ -45,9 +43,10 @@ class PacmanClient:
             return None
 
     def sync_packages(self, refresh: bool = False) -> bool:
-        cmd = ["pacman", "-Sy", "--noconfirm", "--noprogressbar"]
-        if not refresh:
-            cmd.remove("-y")
+        cmd = ["pacman", "-S"]
+        if refresh:
+            cmd.append("-y")
+        cmd.extend(["--noconfirm", "--noprogressbar"])
 
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, check=False)
@@ -56,7 +55,7 @@ class PacmanClient:
             print(f"Error syncing packages: {e}")
             return False
 
-    def get_pending_updates(self) -> List[str]:
+    def get_pending_updates(self) -> list[str]:
         try:
             result = subprocess.run(
                 ["pacman", "-Qu"],
@@ -80,7 +79,7 @@ class PacmanClient:
     def is_locked(self) -> bool:
         return os.path.exists("/var/lib/pacman/db.lck")
 
-    def remove_packages(self, package_paths: List[str]) -> bool:
+    def remove_packages(self, package_paths: list[str]) -> bool:
         for pkg_path in package_paths:
             if os.path.exists(pkg_path):
                 os.remove(pkg_path)

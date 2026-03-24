@@ -2,8 +2,8 @@
 
 from .config import UpdaterConfig, UpdaterState
 from .github import GitHubClient, ReleaseInfo
-from .snapper import SnapperClient
 from .pacman import PacmanClient
+from .snapper import SnapperClient
 
 __all__ = [
     "UpdaterConfig",
