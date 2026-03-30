@@ -1,0 +1,1 @@
+"""madOS Updater client module."""
