@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=madOS Updater
+Comment=System update client
+Exec=/usr/local/bin/mados-updater
+Icon=system-software-update
+Terminal=false
+Type=Application
+Categories=System;
+StartupWMClass=mados-updater
+StartupNotify=true
