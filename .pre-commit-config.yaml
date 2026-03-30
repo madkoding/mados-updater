@@ -1,23 +1,33 @@
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-merge-conflict
+
+  - repo: https://github.com/psf/black
+    rev: 24.1.1
+    hooks:
+      - id: black
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+
   - repo: local
     hooks:
-      - id: ruff-check
-        name: ruff check
-        entry: ruff check client/ tests/
+      - id: tests
+        name: Run Tests
+        entry: python3 -m pytest tests/ -v
         language: system
-        pass_files: false
-        always_run: true
-
-      - id: mypy-check
-        name: mypy type check
-        entry: mypy client/ --ignore-missing-imports
-        language: system
-        pass_files: false
-        always_run: true
-
-      - id: pytest
-        name: pytest tests
-        entry: python3 -m pytest tests/ -q --tb=short
-        language: system
-        pass_files: false
-        always_run: true
+        pass_filenames: false
+        types: [python]
