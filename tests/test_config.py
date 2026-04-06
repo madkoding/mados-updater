@@ -5,9 +5,9 @@ import sys
 import tempfile
 import unittest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "client"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from lib.config import UpdaterConfig, UpdaterState
+from mados_updater.lib.config import UpdaterConfig, UpdaterState
 
 
 class TestUpdaterConfig(unittest.TestCase):

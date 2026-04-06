@@ -6,9 +6,9 @@ import tempfile
 import unittest
 from unittest.mock import MagicMock, patch
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "client"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from lib.pacman import PacmanClient
+from mados_updater.lib.pacman import PacmanClient
 
 
 class TestPacmanClient(unittest.TestCase):

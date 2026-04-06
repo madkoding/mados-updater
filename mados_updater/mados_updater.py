@@ -4,10 +4,10 @@ mados-updater - OTA update client for madOS
 
 Usage:
     mados-updater --check          Check for updates
-    mados-updater --download      Download available updates
-    mados-updater --install       Install downloaded updates
-    mados-updater --rollback      Rollback to previous state
-    mados-updater --status        Show current status
+    mados-updater --download       Download available updates
+    mados-updater --install        Install downloaded updates
+    mados-updater --rollback       Rollback to previous state
+    mados-updater --status         Show current status
 """
 
 import argparse
@@ -25,10 +25,11 @@ from lib.config import UpdaterConfig, UpdaterState
 from lib.github import GitHubClient
 from lib.snapper import SnapperClient
 from lib.pacman import PacmanClient
+from lib.snapshot import DifferentialUpdater, SnapshotManager
 
 
 class MadOSUpdater:
-    def __init__(self):
+    def __init__(self, progress_callback=None):
         self.config = UpdaterConfig()
         self.state = UpdaterState()
         self.snapper = SnapperClient()
@@ -37,8 +38,17 @@ class MadOSUpdater:
             repo_url=self.config.get("updater", "repo_url"),
             channel=self.config.get("updater", "channel", "stable"),
         )
+        self.updater = DifferentialUpdater()
+        self.snapshot_mgr = SnapshotManager()
         self.temp_dir = None
-        self.downloaded_packages = []
+        self.downloaded_update_dir = None
+        self.progress_callback = progress_callback
+
+    def _report_progress(self, message: str, percent: int):
+        if self.progress_callback:
+            self.progress_callback(message, percent)
+        else:
+            print(f"[{percent}%] {message}")
 
     def notify(self, message: str, dialog: bool = False):
         use_dialog = self.config.get_bool("notifications", "use_dialog", True)
@@ -51,157 +61,190 @@ class MadOSUpdater:
         os.system(f'notify-send "madOS Updater" "{message}" 2>/dev/null')
 
     def _notify_dialog(self, message: str):
-        os.system(
-            f'zenity --info --title="madOS Updater" --text="{message}" 2>/dev/null'
-        )
+        os.system(f'zenity --info --title="madOS Updater" --text="{message}" 2>/dev/null')
 
     def check(self) -> bool:
         if DEMO_MODE:
-            print("[DEMO] Checking for updates...")
-            print("[DEMO] Current version: 1.0.0")
-            print("[DEMO] Latest version: 1.0.1")
+            self._report_progress("[DEMO] Checking for updates...", 0)
+            self._report_progress("[DEMO] Current version: 1.0.0", 50)
+            self._report_progress("[DEMO] Latest version: 1.1.0 (available)", 100)
             return True
 
+        self._report_progress("Verificando actualizaciones...", 0)
+
         current_version = self.state.get_current_version()
+        self._report_progress(f"Versión actual: {current_version}", 20)
+
         release = self.github.fetch_releases_json()
 
         if not release:
-            print("No releases found or unable to fetch releases.")
+            self._report_progress("No se encontraron releases", 100)
             return False
+
+        self._report_progress(f"Último release: {release.version}", 80)
 
         if release.version == current_version:
-            print(f"System is up to date (version {current_version})")
+            self._report_progress(f"Sistema actualizado (versión {current_version})", 100)
             return False
 
-        print(f"Update available: {current_version} -> {release.version}")
-        print(f"Release date: {release.release_date}")
-        print(f"Changelog: {release.changelog}")
+        self._report_progress(
+            f"Actualización disponible: {current_version} -> {release.version}", 100
+        )
         return True
 
     def download(self) -> bool:
         if DEMO_MODE:
-            print("[DEMO] Downloading packages...")
-            print("[DEMO] mados-core-1.0.1-1-x86_64.pkg.tar.zst")
-            print("[DEMO] mados-desktop-1.0.1-1-x86_64.pkg.tar.zst")
+            self._report_progress("[DEMO] Downloading manifest...", 0)
+            self._report_progress("[DEMO] Downloading 150 files...", 50)
+            self._report_progress("[DEMO] Download complete", 100)
             return True
 
         release = self.github.fetch_releases_json()
         if not release:
-            print("No release information available.")
+            self._report_progress("No hay información del release disponible", 100)
             return False
 
-        self.temp_dir = tempfile.mkdtemp(prefix="mados-updater-")
-        print(f"Download directory: {self.temp_dir}")
+        version = release.version
 
-        for pkg in release.packages:
-            pkg_name = f"{pkg['name']}-{pkg['version']}-x86_64.pkg.tar.zst"
-            dest_path = os.path.join(self.temp_dir, pkg_name)
-            print(f"Downloading {pkg_name}...")
-            if not self.github.download_file(pkg_name, dest_path):
-                print(f"Failed to download {pkg_name}")
-                return False
-            if release.checksum:
-                if not self.github.verify_checksum(dest_path, release.checksum):
-                    print(f"Checksum verification failed for {pkg_name}")
-                    return False
-            self.downloaded_packages.append(dest_path)
+        def progress_cb(message: str, pct: int):
+            self._report_progress(message, pct)
 
-        print(f"Downloaded {len(self.downloaded_packages)} packages successfully.")
+        self.updater.progress_callback = progress_cb
+
+        self._report_progress("Descargando actualización...", 0)
+
+        update_dir = self.updater.download_update(self.github, version, progress_cb)
+
+        if not update_dir:
+            self._report_progress("Error en la descarga", 100)
+            return False
+
+        self.downloaded_update_dir = update_dir
+        self._report_progress("Descarga completa", 100)
         return True
 
     def install(self) -> bool:
         if DEMO_MODE:
-            print("[DEMO] Creating pre-update snapshot...")
-            print("[DEMO] Installing packages...")
-            print("[DEMO] Update completed successfully!")
+            self._report_progress("[DEMO] Creando snapshot local...", 0)
+            time.sleep(0.5)
+            self._report_progress("[DEMO] Aplicando archivos...", 40)
+            time.sleep(0.5)
+            self._report_progress("[DEMO] Verificando...", 80)
+            time.sleep(0.3)
+            self._report_progress("[DEMO] Completado", 100)
             return True
 
-        if not self.downloaded_packages and not self._load_downloaded_packages():
-            print("No packages to install. Run --download first.")
-            return False
+        if not self.downloaded_update_dir:
+            release = self.github.fetch_releases_json()
+            version = release.version if release else "unknown"
 
-        print("Creating pre-update snapshot...")
-        snapshot_num = self.snapper.create_snapshot(
-            description=f"pre-update-{int(time.time())}"
-        )
-        if not snapshot_num:
-            print("Failed to create snapshot. Aborting update.")
-            return False
-        print(f"Created snapshot #{snapshot_num}")
+            def progress_cb(message: str, pct: int):
+                self._report_progress(message, pct)
 
-        print("Installing packages...")
-        if not self.pacman.install_packages(self.downloaded_packages):
-            print("Package installation failed. Rolling back...")
-            self.snapper.rollback(snapshot_num)
-            return False
+            self.updater.progress_callback = progress_cb
 
-        print("Update installed successfully!")
+            self._report_progress("Descargando actualización...", 0)
+            update_dir = self.updater.download_update(self.github, version, progress_cb)
+
+            if not update_dir:
+                self._report_progress("Error en la descarga", 100)
+                return False
+
+            self.downloaded_update_dir = update_dir
+
         release = self.github.fetch_releases_json()
+        version = release.version if release else "unknown"
+
+        self._report_progress("Creando snapshot local del sistema actual...", 0)
+        pre_snapshot = self.snapper.create_snapshot(description=f"pre-update-{version}")
+        if pre_snapshot:
+            self._report_progress(f"Snapshot local creado: #{pre_snapshot}", 5)
+        else:
+            self._report_progress("Warning: No se pudo crear snapshot local", 5)
+
+        self._report_progress("Aplicando actualización diferencial...", 10)
+
+        def progress_cb(message: str, pct: int):
+            adjusted_pct = 10 + int(pct * 0.85)
+            self._report_progress(message, adjusted_pct)
+
+        success = self.updater.verify_and_apply(self.downloaded_update_dir, progress_cb)
+
+        if not success:
+            self._report_progress(
+                "Error aplicando actualización. Puede restaurar desde snapshot.",
+                100,
+            )
+            return False
+
         if release:
             self.state.set_current_version(release.version)
-        return True
 
-    def _load_downloaded_packages(self) -> bool:
-        if not self.temp_dir or not os.path.exists(self.temp_dir):
-            return False
-        self.downloaded_packages = [
-            os.path.join(self.temp_dir, f)
-            for f in os.listdir(self.temp_dir)
-            if f.endswith(".pkg.tar.zst")
-        ]
-        return len(self.downloaded_packages) > 0
+        self._report_progress("Actualización aplicada correctamente", 100)
+        self._notify_system(f"madOS actualizado a {version}.")
+        return True
 
     def rollback(self, snapshot_number: int = None) -> bool:
         if DEMO_MODE:
-            print("[DEMO] Rolling back to snapshot...")
+            self._report_progress("[DEMO] Rolling back to snapshot...", 0)
+            self._report_progress("[DEMO] Please reboot", 100)
             return True
 
         if snapshot_number is None:
             snapshot_number = self.snapper.get_latest_pre_snapshot()
 
         if not snapshot_number:
-            print("No pre-update snapshot found.")
+            self._report_progress("No se encontró snapshot pre-update", 100)
             return False
 
-        print(f"Rolling back to snapshot #{snapshot_number}...")
-        if self.snapper.rollback(snapshot_number):
-            print("Rollback completed. Please reboot.")
+        self._report_progress(f"Restaurando snapshot #{snapshot_number}...", 0)
+
+        if self.snapper.rollback_with_default(snapshot_number):
+            self._report_progress("Restauración completada. Reinicie.", 100)
+            self._notify_system(
+                f"Sistema restaurado al snapshot #{snapshot_number}. Reinicie para aplicar."
+            )
             return True
+
+        self._report_progress("Error en la restauración", 100)
         return False
 
     def status(self):
         current_version = self.state.get_current_version()
-        print(f"Current version: {current_version}")
+        print(f"Versión actual: {current_version}")
         print(f"Repo URL: {self.config.get('updater', 'repo_url')}")
-        print(f"Channel: {self.config.get('updater', 'channel')}")
+        print(f"Canal: {self.config.get('updater', 'channel')}")
 
-        snapshots = self.snapper.list_snapshots()
-        print(f"\nSnapshots: {len(snapshots)}")
-        for snap in snapshots[-5:]:
-            print(f"  #{snap['number']} - {snap['description']}")
+        snapshots = self.snapshot_mgr.list_local_snapshots()
+        print(f"\nSnapshots locales ({len(snapshots)}):")
+        for snap in snapshots[-10:]:
+            print(
+                f"  #{snap['number']} - {snap['type']} - {snap['date']} {snap['time']} - {snap['description']}"
+            )
 
     def cleanup(self):
         if self.temp_dir and os.path.exists(self.temp_dir):
-            shutil.rmtree(self.temp_dir)
+            shutil.rmtree(self.temp_dir, ignore_errors=True)
+        if self.downloaded_update_dir and os.path.exists(self.downloaded_update_dir):
+            shutil.rmtree(self.downloaded_update_dir, ignore_errors=True)
+
+    def get_available_update(self) -> tuple[str, str] | None:
+        release = self.github.fetch_releases_json()
+        if not release:
+            return None
+        current_version = self.state.get_current_version()
+        if release.version != current_version:
+            return (current_version, release.version)
+        return None
 
 
 def main():
     parser = argparse.ArgumentParser(description="madOS OTA Updater")
-    parser.add_argument(
-        "--check", action="store_true", help="Check for available updates"
-    )
-    parser.add_argument(
-        "--download", action="store_true", help="Download available updates"
-    )
-    parser.add_argument(
-        "--install", action="store_true", help="Install downloaded updates"
-    )
-    parser.add_argument(
-        "--rollback", action="store_true", help="Rollback to previous state"
-    )
-    parser.add_argument(
-        "--status", action="store_true", help="Show current status"
-    )
+    parser.add_argument("--check", action="store_true", help="Check for available updates")
+    parser.add_argument("--download", action="store_true", help="Download available updates")
+    parser.add_argument("--install", action="store_true", help="Install downloaded updates")
+    parser.add_argument("--rollback", action="store_true", help="Rollback to previous state")
+    parser.add_argument("--status", action="store_true", help="Show current status")
     parser.add_argument(
         "--snapshot",
         type=int,

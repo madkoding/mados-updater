@@ -6,12 +6,19 @@ requires-python = ">=3.10"
 dependencies = []
 
 [project.optional-dependencies]
+gui = [
+    "PyGObject>=3.44",
+]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "ruff>=0.1",
     "mypy>=1.0",
 ]
+
+[project.scripts]
+mados-updater = "mados_updater.mados_updater:main"
+mados-updater-gui = "mados_updater.gui.window:run_gui"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -20,7 +27,7 @@ python_functions = ["test_*"]
 addopts = "-v --tb=short"
 
 [tool.coverage.run]
-source = ["client"]
+source = ["mados_updater"]
 omit = ["*/tests/*", "*/__pycache__/*"]
 
 [tool.coverage.report]

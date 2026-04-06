@@ -10,24 +10,35 @@ import sys
 import unittest
 from unittest.mock import MagicMock, patch
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "client"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from lib.config import UpdaterConfig, UpdaterState
-from lib.github import GitHubClient, ReleaseInfo
-from lib.pacman import PacmanClient
-from lib.snapper import SnapperClient
+from mados_updater.lib.config import UpdaterConfig, UpdaterState
+from mados_updater.lib.github import GitHubClient, ReleaseInfo
+from mados_updater.lib.pacman import PacmanClient
+from mados_updater.lib.snapper import SnapperClient
 
 
 class TestMadOSUpdaterLogic(unittest.TestCase):
     """Test the update flow logic by directly instantiating and testing the classes."""
 
     def test_config_loading(self):
-        config = UpdaterConfig()
-        self.assertEqual(config.get("updater", "repo_url"), "https://github.com/madkoding/mados-updates")
-        self.assertEqual(config.get("updater", "channel"), "stable")
+        import tempfile, shutil
+
+        temp_dir = tempfile.mkdtemp()
+        config_path = os.path.join(temp_dir, "test.conf")
+        try:
+            config = UpdaterConfig(config_path=config_path)
+            self.assertEqual(
+                config.get("updater", "repo_url"), "https://github.com/madkoding/mados-updates"
+            )
+            self.assertEqual(config.get("updater", "channel"), "stable")
+        finally:
+            shutil.rmtree(temp_dir)
 
     def test_github_client_parsing(self):
-        client = GitHubClient(repo_url="https://github.com/madkoding/mados-updates", channel="stable")
+        client = GitHubClient(
+            repo_url="https://github.com/madkoding/mados-updates", channel="stable"
+        )
         self.assertEqual(client.owner, "madkoding")
         self.assertEqual(client.repo, "mados-updates")
         self.assertIn("madkoding/mados-updates", client._get_release_url())

@@ -10,6 +10,12 @@ check_interval = 3600
 auto_download = false
 auto_install = false
 
+[snapshots]
+timeline_enabled = false
+keep_pre_snapshots = 5
+keep_post_snapshots = 3
+auto_snapshot_before_install = true
+
 [notifications]
 enabled = true
 use_dialog = true
@@ -45,6 +51,11 @@ class UpdaterConfig:
 
     def get_int(self, section: str, key: str, fallback: int = 0) -> int:
         return self.config.getint(section, key, fallback=fallback)
+
+    def get_section(self, section: str) -> dict:
+        if not self.config.has_section(section):
+            return {}
+        return dict(self.config.items(section))
 
     def set(self, section: str, key: str, value: str):
         if not self.config.has_section(section):

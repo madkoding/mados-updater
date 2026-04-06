@@ -5,9 +5,9 @@ import sys
 import unittest
 from unittest.mock import MagicMock, patch
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "client"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from lib.snapper import SnapperClient
+from mados_updater.lib.snapper import SnapperClient
 
 
 class TestSnapperClient(unittest.TestCase):

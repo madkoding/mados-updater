@@ -1,0 +1,58 @@
+"""Nord color palette for madOS GUI."""
+
+NORD0 = "#2E3440"
+NORD1 = "#3B4252"
+NORD2 = "#434C5E"
+NORD3 = "#4C566A"
+NORD4 = "#D8DEE9"
+NORD5 = "#E5E9F0"
+NORD6 = "#ECEFF4"
+
+NORD7 = "#8FBCBB"
+NORD8 = "#88C0D0"
+NORD9 = "#81A1C1"
+NORD10 = "#5E81AC"
+
+NORD11 = "#BF616A"
+NORD12 = "#D08770"
+NORD13 = "#EBCB8B"
+NORD14 = "#A3BE8C"
+NORD15 = "#B48EAD"
+
+NORD_POLAR_NIGHT = {
+    "nord0": NORD0,
+    "nord1": NORD1,
+    "nord2": NORD2,
+    "nord3": NORD3,
+}
+
+NORD_SNOW_STORM = {
+    "nord4": NORD4,
+    "nord5": NORD5,
+    "nord6": NORD6,
+}
+
+NORD_FROST = {
+    "nord7": NORD7,
+    "nord8": NORD8,
+    "nord9": NORD9,
+    "nord10": NORD10,
+}
+
+NORD_AURORA = {
+    "nord11": NORD11,
+    "nord12": NORD12,
+    "nord13": NORD13,
+    "nord14": NORD14,
+    "nord15": NORD15,
+}
+
+NORD_BG = NORD0
+NORD_BG_LIGHT = NORD1
+NORD_FG = NORD4
+NORD_FG_DIM = NORD3
+NORD_ACCENT = NORD8
+NORD_ACCENT_ALT = NORD10
+NORD_SUCCESS = NORD14
+NORD_WARNING = NORD13
+NORD_ERROR = NORD11

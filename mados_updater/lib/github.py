@@ -21,6 +21,7 @@ class ReleaseInfo:
     changelog: str
     min_supported_version: str
     download_url: str
+    file_manifest_url: str = ""
 
 
 class GitHubClient:
@@ -55,6 +56,10 @@ class GitHubClient:
                     download_url=data.get(
                         "download_url",
                         f"{self.repo_url}/releases/download/{self.channel}/",
+                    ),
+                    file_manifest_url=data.get(
+                        "file_manifest_url",
+                        f"{self.repo_url}/releases/download/{self.channel}/files/",
                     ),
                 )
         except urllib.error.HTTPError as e:
@@ -115,9 +120,7 @@ class GitHubClient:
                         packages=data.get("packages", []),
                         checksum=data.get("checksum", ""),
                         changelog=data.get("changelog", ""),
-                        min_supported_version=data.get(
-                            "min_supported_version", "0.0.0"
-                        ),
+                        min_supported_version=data.get("min_supported_version", "0.0.0"),
                         download_url=os.path.dirname(download_url) + "/",
                     )
         except Exception as e:

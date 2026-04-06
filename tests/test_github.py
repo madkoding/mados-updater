@@ -7,9 +7,9 @@ import tempfile
 import unittest
 from unittest.mock import MagicMock, patch
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "client"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from lib.github import GitHubClient, ReleaseInfo
+from mados_updater.lib.github import GitHubClient, ReleaseInfo
 
 
 class TestReleaseInfo(unittest.TestCase):
@@ -161,7 +161,9 @@ class TestGitHubClientLatestRelease(unittest.TestCase):
             with tempfile.TemporaryDirectory() as temp_dir:
                 releases_json_path = os.path.join(temp_dir, "releases.json")
                 with open(releases_json_path, "w") as f:
-                    f.write('{"version": "2.0.0", "release_date": "2024-02-01", "packages": [], "checksum": "", "changelog": "", "min_supported_version": "1.0.0", "download_url": "https://example.com/"}')
+                    f.write(
+                        '{"version": "2.0.0", "release_date": "2024-02-01", "packages": [], "checksum": "", "changelog": "", "min_supported_version": "1.0.0", "download_url": "https://example.com/"}'
+                    )
 
                 with patch("tempfile.mkdtemp", return_value=temp_dir):
                     client = GitHubClient("https://github.com/madkoding/mados-updates")
